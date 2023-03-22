@@ -1,0 +1,259 @@
+{{template "base" .}}
+
+{{define "content" }}
+    <!-- kontener Bootstrap -->
+    <div class="container">
+        <!-- pierwszy wiersz -->
+        <div class="row">
+            <div class="col">
+                <h1 class="mt-5">Test mikroserwisów w Golang</h1>
+                <hr>
+                <!-- buttons: tutaj mamy przyciski/linki wywołujące odpowiednie funkcje JavaScript 
+                (na końcu tego kodu, w sekcji script) -->
+                <a id="brokerBtn" class="btn btn-outline-secondary" 
+                href="javascript:void(0);">Testuj Broker'a</a>
+                <a id="authBtn" class="btn btn-outline-secondary" 
+                href="javascript:void(0);">Testuj Auth'a</a>
+                <a id="logBtn" class="btn btn-outline-secondary" 
+                href="javascript:void(0);">Testuj Logger'a</a>
+                <a id="mailBtn" class="btn btn-outline-secondary" 
+                href="javascript:void(0);">Testuj Mailer'a</a>
+                <!-- end buttons -->
+
+                <!-- output: tutaj pokazujemy wynik (output) naszych działań -->
+                <div id="output" class="mt-5" style="outline: 1px solid silver; padding: 2em;">
+                    <span class="text-muted">Tutaj pokazuję wynik (output):</span>
+                </div>
+                <!-- end output -->
+            </div>
+        </div>
+        <div class="row">
+            <!-- payload: tutaj wyświetlamy nasz payload (dane wysyłane z żądaniem) -->
+            <div class="col">
+                <h4 class="mt-5">Wysłane (payload sent)</h4>
+                <div class="mt-1" style="outline: 1px solid silver; padding: 2em;">
+                    <pre id="payload">
+                        <span class="text-muted">Jeszcze nic nie wysłano...</span>
+                    </pre>
+                </div>
+            </div>
+            <!-- end payload -->
+            <!-- received: tutaj wyświetlamy otrzymany wynik (odpowiedź na żądanie) -->
+            <div class="col">
+                <h4 class="mt-5">Odebrane (received)</h4>
+                <div class="mt-1" style="outline: 1px solid silver; padding: 2em;">
+                    <pre id="received">
+                        <span class="text-muted">Jeszcze nic nie otrzymałem...</span>
+                    </pre>
+                </div>
+            </div>
+            <!-- end received -->
+        </div>
+    </div>
+{{end}}
+
+{{define "js"}}
+    <script>
+        // Tworzymy odpowiednie zmienne, odwołujące się po id elementu html
+        let brokerBtn = document.getElementById("brokerBtn");
+        let authBtn = document.getElementById("authBtn");
+        let logBtn = document.getElementById("logBtn");
+        let mailBtn = document.getElementById("mailBtn");    
+        let output = document.getElementById("output");
+        let sent = document.getElementById("payload");
+        let recevied = document.getElementById("received");
+
+        // Funkcja wywoływana po kliknięciu przycisku "brokerBtn", zdarzenie "click"
+        brokerBtn.addEventListener("click", function() {
+
+            // Przygotowanie pustego body z użyciem metody "POST"
+            const body = {
+                method: 'POST',
+            }
+
+            // Wysłanie żądania do serwera Broker'a z wykorzystaniem funkcji "fetch"
+            // i przygotowanego wcześniej body
+            fetch("http:\/\/localhost:8080", body)
+
+            // Konwersja odpowiedzi na format JSON
+            .then((response) => response.json())
+
+            // Obsługa zawartości "payload" i "data"
+            .then((data) => {
+                sent.innerHTML ="wysłano puste żądanie testowe";
+                received.innerHTML = JSON.stringify(data, undefined, 4);
+
+                // Obsługa zawartości dla zmiennej data, która zawiera treść odpowiedzi
+                if (data.error) {
+                    // Jeżeli mamy błąd, to odpowiedź będzie w konsoli przeglądarki (console.log)
+                    console.log(data.message);
+                } else {
+                    // Jeżeli wynik jest poprawny to wyświetli się na stronie w elemencie id="output"
+                    output.innerHTML += `<br><strong>Odpowiedź od usługi Broker'a</strong>: ${data.message}`;
+                }
+            })
+
+            // Obsługa błędu dla żądania "fetch"
+            .catch((error) => {
+                output.innerHTML += "<br><br>Błąd: " + error;
+            })
+        })
+
+        // Funkcja wywoływana po kliknięciu przycisku "authBtn", zdarzenie "click"
+        authBtn.addEventListener("click", function() {
+
+            // Przygotowujemy payload
+            const payload = {
+                action: "auth",
+                auth: {
+                    email: "hubert@example.com",
+                    password: "verysecret",
+                }
+            }
+
+            // Przygotowujemy headers
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+
+            // Przygotowujemy body (z wykorzystaniem payload i headers)
+            const body = {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: headers,
+            }
+
+            // Wysłanie żądania do serwera Broker'a z wykorzystaniem funkcji "fetch"
+            // i przygotowanego wcześniej body - żądanie idzie na "/handle"
+            fetch("http:\/\/localhost:8080/handle", body)
+
+            // Konwersja odpowiedzi na format JSON
+            .then((response) => response.json())
+
+            // Obsługa zawartości "payload" i "data"
+            .then((data) => {
+                sent.innerHTML = JSON.stringify(payload, undefined, 4);
+                received.innerHTML = JSON.stringify(data, undefined, 4);
+
+                // Obsługa zawartości dla zmiennej data, która zawiera treść odpowiedzi
+                if (data.error) {
+                    // Wyświetlamy błąd w elemencie id="output"
+                    output.innerHTML += `<br><strong>Błąd:</strong> ${data.message}`;
+                } else {
+                    // Wyświetlamy wynik w elemencie id="output"
+                    output.innerHTML += `<br><strong>Odpowiedź od usługi Broker'a</strong>: ${data.message}`;
+                }
+
+            })
+
+            // Obsługa błędu dla żądania "fetch"
+            .catch((error) => {
+                output.innerHTML += "<br><br>Błąd: " + error;
+            })
+        })
+
+        // Funkcja wywoływana po kliknięciu przycisku "logBtn", zdarzenie "click"
+        logBtn.addEventListener("click", function() {
+
+            // Przygotowujemy payload
+            const payload = {
+                action: "log",
+                log: {
+                    name: "zdarzenie",
+                    data: "przesyłam blok danych wsadowych",
+                }
+            }
+
+            // Przygotowujemy headers
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+
+            // Przygotowujemy body (z wykorzystaniem payload i headers)
+            const body = {
+                method: "POST",
+                body: JSON.stringify(payload),
+                headers: headers,
+            }
+
+            // Wysłanie żądania do serwera Broker'a z wykorzystaniem funkcji "fetch"
+            // i przygotowanego wcześniej body - żądanie idzie na "/handle"
+            fetch("http:\/\/localhost:8080/handle", body)
+
+            // Konwersja odpowiedzi na format JSON            
+            .then((response) => response.json())
+
+            // Obsługa zawartości "payload" i "data"            
+            .then((data) => {
+                sent.innerHTML = JSON.stringify(payload, undefined, 4);
+                received.innerHTML = JSON.stringify(data, undefined, 4);
+
+                // Obsługa zawartości dla zmiennej data, która zawiera treść odpowiedzi                
+                if (data.error) {
+                    // Wyświetlamy błąd w elemencie id="output"
+                    output.innerHTML += `<br><strong>Błąd:</strong> ${data.message}`;
+                } else {
+                    // Wyświetlamy wynik w elemencie id="output"
+                    output.innerHTML += `<br><strong>Odpowiedź od usługi Broker'a</strong>: ${data.message}`;
+                }
+            })
+
+            // Obsługa błędu dla żądania "fetch"
+            .catch((error) => {
+                output.innerHTML += "<br><br>Błąd: " + error;
+            })        
+        })
+
+        // Funkcja wywoływana po kliknięciu przycisku "mailBtn", zdarzenie "click"
+        mailBtn.addEventListener("click", function() {
+
+            // Przygotowujemy payload
+            const payload = {
+                action: "mail",
+                mail: {
+                    from: "test@via24online.com",
+                    to: "lukasz.kost@gmail.com",
+                    subject: "Test wysyłki maila",
+                    message: "Sprawdzam, czy mikroserwisy działają!",
+                }
+            }
+
+            // Przygotowujemy headers
+            const headers = new Headers();
+            headers.append("Content-Type", "application/json");
+
+            // Przygotowujemy body (z wykorzystaniem payload i headers)
+            const body = {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                headers: headers,
+            }
+
+            // Wysłanie żądania do serwera Broker'a z wykorzystaniem funkcji "fetch"
+            // i przygotowanego wcześniej body - żądanie idzie na "/handle"
+            fetch("http:\/\/localhost:8080/handle", body)
+
+            // Konwersja odpowiedzi na format JSON
+            .then((response) => response.json())
+
+            // Obsługa zawartości "payload" i "data"
+            .then((data) => {
+                sent.innerHTML = JSON.stringify(payload, undefined, 4);
+                received.innerHTML = JSON.stringify(data, undefined, 4);
+
+                // Obsługa zawartości dla zmiennej data, która zawiera treść odpowiedzi                
+                if (data.error) {
+                    // Wyświetlamy błąd w elemencie id="output"
+                    output.innerHTML += `<br><strong>Błąd:</strong> ${data.message}`;
+                } else {
+                    // Wyświetlamy wynik w elemencie id="output"
+                    output.innerHTML += `<br><strong>Odpowiedź od usługi Broker'a</strong>: ${data.message}`;
+                }
+            })
+
+            // Obsługa błędu dla żądania "fetch"            
+            .catch((error) => {
+                output.innerHTML += "<br><br>Błąd: " + error;
+            })
+        })
+
+    </script>
+{{end}}

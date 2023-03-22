@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"path": "project"
+		},
+		{
+			"path": "frontend"
+		},
+		{
+			"path": "broker-service"
+		},
+		{
+			"path": "auth-service"
+		},
+		{
+			"path": "logger-service"
+		},
+		{
+			"path": "mailer-service"
+		},
+		{
+			"path": "listener-service"
+		}
+	]
+}
